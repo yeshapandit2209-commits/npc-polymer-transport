@@ -11,10 +11,11 @@ Department of Chemical Engineering, Indian Institute of Technology Gandhinagar, 
 
 We use coarse-grained molecular dynamics (LAMMPS) to study how charge patterning, local chain stiffness and hydrophobic cohesion control passive cargo transport through a polymer-grafted cylindrical pore, a model of the nuclear pore complex (NPC).
 
-The repository has two parts:
+The repository has three parts:
 
-1. **Single-chain simulations** (`blocklength/`, `single_chain_k_theta/`): how charge patterning and bending stiffness set the size of one polymer chain.
-2. **Pore simulations** (`no_hydrophobic/`, `fA_0.2/`, `fA_0.4/`): cargo transport and free energy in the grafted pore without hydrophobic beads and with hydrophobic fractions f_A = 0.2 and 0.4.
+1. **Sequence analysis** (`sequence_analysis/`): charge patterning along yeast FG-Nup sequences.
+2. **Single-chain simulations** (`blocklength/`, `single_chain_k_theta/`): how charge patterning and bending stiffness set the size of one polymer chain.
+3. **Pore simulations** (`no_hydrophobic/`, `fA_0.2/`, `fA_0.4/`): cargo transport and free energy in the grafted pore without hydrophobic beads and with hydrophobic fractions f_A = 0.2 and 0.4.
 
 Raw trajectories (DCD files) are not included because of their size. They are available from the authors on request.
 
@@ -24,6 +25,7 @@ Raw trajectories (DCD files) are not included because of their size. They are av
 
 ```
 npc-polymer-transport/
+├── sequence_analysis/            yeast_FG_Nups.fasta, cumulative_charge.py, lcr_analysis.py
 ├── blocklength/                  single charged chain, charge blocklength λ = 1 to 32
 │   ├── 01_system_generation/     generate_saw.py, build_data.tcl
 │   ├── 02_simulation/            in.blocklength.lammps
@@ -34,12 +36,14 @@ npc-polymer-transport/
 ├── no_hydrophobic/               pore brushes without hydrophobic beads
 │   ├── 01_system_generation/     npc.py
 │   ├── 02_simulation/            setup_runs.py, run_all.sh, lammps.config
-│   ├── 03_analysis/              dwell_hydro.py, counts_from_runs.py, fit_sigma50.py, compute_density_profiles.py
+│   ├── 03_analysis/              dwell_hydro.py, counts_from_runs.py, fit_sigma50.py,
+│   │                             compute_density_profiles.py, order_mobility.py, compute_free_space.py
 │   └── 04_pmf/                   setup_umbrella.py, setup_hydro.py, wham_half.py
 ├── fA_0.2/                       pore brushes with hydrophobic fraction f_A = 0.2
 │   ├── 01_system_generation/     build_cyl_system_tunable.py, chain.tcl
 │   ├── 02_simulation/            setup_equil.py, setup_hydro.py
-│   ├── 03_analysis/              dwell_hydro.py, counts_from_runs.py, fit_sigma50.py, compute_density_profiles.py
+│   ├── 03_analysis/              dwell_hydro.py, counts_from_runs.py, fit_sigma50.py,
+│   │                             compute_density_profiles.py, compute_free_space.py
 │   └── 04_pmf/                   setup_umbrella.py, setup_hydro.py, wham_half.py, diffusion_z.py
 ├── fA_0.4/                       same as fA_0.2/, with f_A = 0.4
 └── README.md
@@ -52,7 +56,7 @@ npc-polymer-transport/
 - LAMMPS (29 Aug 2024 version), built with the MOLECULE and KSPACE packages
 - VMD (for building data files with the .tcl scripts and for snapshots)
 - Python 3.8 or newer with numpy, scipy, pandas, matplotlib
-- MDAnalysis (for the density profiles)
+- MDAnalysis (for the density profiles and the free-space analysis)
 
 ```
 pip install numpy scipy pandas matplotlib MDAnalysis
@@ -77,7 +81,23 @@ pip install numpy scipy pandas matplotlib MDAnalysis
 
 ---
 
-## 1. Single chain: charge blocklength (`blocklength/`)
+## 1. Sequence analysis (`sequence_analysis/`)
+
+| File | Purpose |
+|---|---|
+| `yeast_FG_Nups.fasta` | sequences of eight yeast FG-Nups from NCBI (accession numbers in the headers) |
+| `cumulative_charge.py` | cumulative count of K, R, D and E along each sequence; locates the boundary between the charge-poor free end and the charge-rich segment |
+| `lcr_analysis.py` | lengths of like-charge regions (LCRs) in the charge-rich and charge-poor segments |
+
+```
+cd sequence_analysis
+python3 cumulative_charge.py yeast_FG_Nups.fasta
+python3 lcr_analysis.py yeast_FG_Nups.fasta
+```
+
+---
+
+## 2. Single chain: charge blocklength (`blocklength/`)
 
 | Folder | File | Purpose |
 |---|---|---|
@@ -91,7 +111,7 @@ cd blocklength/03_analysis
 python3 plot_rg.py <folder with rg_bl*.dat>
 ```
 
-## 2. Single chain: bending stiffness (`single_chain_k_theta/`)
+## 3. Single chain: bending stiffness (`single_chain_k_theta/`)
 
 | Folder | File | Purpose |
 |---|---|---|
@@ -106,7 +126,7 @@ python3 blocklength/03_analysis/plot_rg.py <folder with rg_k*.dat>
 
 ---
 
-## 3. Pore simulations (`no_hydrophobic/`, `fA_0.2/`, `fA_0.4/`)
+## 4. Pore simulations (`no_hydrophobic/`, `fA_0.2/`, `fA_0.4/`)
 
 `fA_0.2/` and `fA_0.4/` contain the same files; they differ only in the hydrophobic fraction f_A.
 
@@ -129,9 +149,7 @@ python3 blocklength/03_analysis/plot_rg.py <folder with rg_k*.dat>
 
 Each set-up script writes 100 independent trajectories for every cargo size (σ_c = 0.5 to 8σ). A trajectory ends when the cargo leaves through the opposite end of the pore, moves more than 60σ away, or reaches 2 × 10⁶ steps.
 
-### 03_analysis: transport
-
-Run in this order:
+### 03_analysis: brush structure and transport
 
 | Step | File | Purpose |
 |---|---|---|
@@ -139,12 +157,16 @@ Run in this order:
 | 2 | `counts_from_runs.py` | counts passed and trapped trajectories per brush and cargo size; writes `counts.csv` |
 | 3 | `fit_sigma50.py` | fits P_pass(σ_c) = P₀ / (1 + exp[(σ_c − σ₅₀)/w]) by binomial maximum likelihood; size cutoff σ₅₀ with 95% bootstrap interval and goodness-of-fit p |
 | 4 | `compute_density_profiles.py` | polymer density along the pore axis, inside and outside the pore |
+| 5 | `order_mobility.py` | nematic order S and chain-end mobility D_eff as a function of distance from the pore axis, in the cargo-free brush |
+| 6 | `compute_free_space.py` | largest cargo that fits into the empty space of the cargo-free brush at each height, σ_fit(z) |
 
 ```
 cd no_hydrophobic/03_analysis
 python3 dwell_hydro.py --flat 0 25 50 75 100 --name nh
 python3 counts_from_runs.py none dwell_runs.csv
 python3 fit_sigma50.py 16          # number of CPU cores
+python3 order_mobility.py --dt 0.2 --lags 5 --out om_noA --sys 0=DATA:DCD 25=DATA:DCD 50=DATA:DCD 75=DATA:DCD 100=DATA:DCD
+python3 compute_free_space.py --data cyl_50.data --dcd dump_50.dcd --cargo-diameter 0 --fg-diameter 1 --tag frigid_50
 ```
 For `fA_0.2/` and `fA_0.4/`, use the f_A value as the label, for example `python3 counts_from_runs.py 0.2 dwell_runs.csv`.
 
@@ -174,7 +196,6 @@ python3 wham_half.py 0k5/umbrella_s4.0 50k5/umbrella_s4.0 100k5/umbrella_s4.0
 
 ---
 
-
 ## Acknowledgements
 
- Simulations were run on the High-Performance Computing Facility of IIT Gandhinagar and the PARAM Ananta supercomputer (National Supercomputing Mission).
+Simulations were run on the High-Performance Computing Facility of IIT Gandhinagar and the PARAM Ananta supercomputer (National Supercomputing Mission).
