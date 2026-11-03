@@ -16,6 +16,7 @@ LAMMPS (29 Aug 2024 version), built with the MOLECULE and KSPACE packages
 VMD (for building data files with the .tcl scripts and for snapshots)
 Python 3.8 or newer with numpy, scipy, pandas, matplotlib
 MDAnalysis (for the density profiles)
+
 pip install numpy scipy pandas matplotlib MDAnalysis
 
 Model in brief
