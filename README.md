@@ -195,7 +195,7 @@ python3 dwell_hydro.py --flat 0 25 50 75 100 --name nh
 python3 counts_from_runs.py none dwell_runs.csv
 python3 fit_sigma50.py 16          # number of CPU cores
 python3 order_mobility.py --dt 0.2 --lags 5 --out om_noA --sys 0=DATA:DCD 25=DATA:DCD 50=DATA:DCD 75=DATA:DCD 100=DATA:DCD
-python3 compute_free_space.py --data cyl_50.data --dcd dump_50.dcd --cargo-diameter 0 --fg-diameter 1 --tag frigid_50
+python3 compute_free_space.py --data ../02_simulation/50k5_05.data --dcd dump_50.dcd --cargo-diameter 0 --fg-diameter 1 --tag frigid_50
 ```
 For `fA_0.2/` and `fA_0.4/`, use the f_A value as the label, for example `python3 counts_from_runs.py 0.2 dwell_runs.csv`.
 
