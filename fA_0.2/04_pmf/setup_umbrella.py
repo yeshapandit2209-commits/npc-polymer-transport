@@ -117,7 +117,7 @@ def main():
     ap.add_argument("--every", type=int, default=10)
     ap.add_argument("--dump", type=int, default=0, help="also write a DCD every N steps (0 = none; DCDs are big)")
     ap.add_argument("--damp", type=float, default=1.0)
-    ap.add_argument("--aa-eps", type=float, default=2.0)
+    ap.add_argument("--aa-eps", type=float, default=1.5)
     ap.add_argument("--aa-cut", type=float, default=2.5)
     ap.add_argument("--seed", type=int, default=24680)
     ap.add_argument("--no-start", action="store_true")

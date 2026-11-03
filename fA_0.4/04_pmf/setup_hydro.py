@@ -26,7 +26,7 @@ cargo held -> release, Langevin on the cargo, DCD every 100 steps, stop at:
 
 Options (defaults = what you run now):
    --sigmas 0.5 1 2 3 4 5 6 7 8   --nruns 50   --prod-steps 2000000   --equil-steps 20000
-   --cargo-langevin 1.0   --escape 60   --aa-eps 2.0   --aa-cut 2.5
+   --cargo-langevin 1.0   --escape 60   --aa-eps 1.5   --aa-cut 2.5
    --angle-by-region      instead count an A bead as rigid (2) in the rigid region and flexible (3)
                           in the flexible region before applying the rule
    --no-start             only write the folders, do not submit / start
@@ -352,7 +352,7 @@ def main():
     ap.add_argument("--equil-steps", type=int, default=20000)
     ap.add_argument("--cargo-langevin", type=float, default=1.0)
     ap.add_argument("--escape", type=float, default=60.0)
-    ap.add_argument("--aa-eps", type=float, default=2.0)
+    ap.add_argument("--aa-eps", type=float, default=1.5)
     ap.add_argument("--aa-cut", type=float, default=2.5)
     ap.add_argument("--angle-by-region", action="store_true")
     ap.add_argument("--seed", type=int, default=12345)
