@@ -1,0 +1,56 @@
+# in.blocklength.lammps
+# Single self-avoiding charged polymer chain, LJ reduced units.
+# Run once per blocklength: lmp -var blocklen 8 -in in.blocklength.lammps -log log.bl8
+
+units       lj
+atom_style  full
+boundary    p p p
+
+variable blocklen index 1   # overridden from command line: -var blocklen <N>
+
+read_data chain_bl${blocklen}.data
+
+# ---- pair interactions ----
+# WCA (purely repulsive, truncated-shifted LJ) for excluded volume,
+# overlaid with coul/long for electrostatics (long-range part via PPPM)
+pair_style hybrid/overlay lj/cut 1.12246 coul/long 10.0
+pair_coeff * * lj/cut  1.0 1.0 1.12246
+pair_coeff * * coul/long
+pair_modify pair lj/cut shift yes
+
+kspace_style pppm 1.0e-4
+
+# ---- bonds ----
+bond_style  harmonic
+bond_coeff  1 100.0 1.0
+
+# ---- angles (k=0 => fully flexible chain, no bending penalty) ----
+angle_style harmonic
+angle_coeff * 0.0 180.0
+
+# exclude bonded neighbors from pair interactions
+special_bonds lj/coul 0.0 0.0 0.0
+
+# ---- integration ----
+velocity all create 1.0 12345 mom yes rot yes dist gaussian
+
+fix 1 all nvt temp 1.0 1.0 1.0
+
+timestep 0.01
+
+thermo       100000
+thermo_style custom step temp epair ebond elong etotal press
+
+# ---- radius of gyration tracking ----
+compute rg all gyration
+fix     rgout all ave/time 100 1 100 c_rg file rg_bl${blocklen}.dat
+
+# ---- trajectory ----
+# DCD, to load in VMD alongside chain_bl<N>.psf (File > New Molecule ->
+# load psf, then load this dcd into the same molecule)
+dump 1 all dcd 100000 dump_bl${blocklen}.dcd
+dump_modify 1 unwrap yes
+
+run 100000000
+
+write_data final_bl${blocklen}.data

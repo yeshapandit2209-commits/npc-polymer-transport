@@ -1,0 +1,51 @@
+# in.angle_k.lammps
+# Same SAW backbone as the blocklength study, but single bead type,
+# no charges, no electrostatics. Only angle stiffness k varies.
+# Run once per k: lmp -var k 10 -in in.angle_k.lammps -log log.k10
+
+units       lj
+atom_style  full
+boundary    p p p
+
+variable k index 0   # overridden from command line: -var k <value>
+
+read_data chain_simple.data
+
+# ---- pair interactions ----
+# WCA (purely repulsive) only -- no charges, no coul/long, no kspace
+pair_style lj/cut 1.12246
+pair_coeff * * 1.0 1.0 1.12246
+pair_modify shift yes
+
+# ---- bonds ----
+bond_style  harmonic
+bond_coeff  1 100.0 1.0
+
+# ---- angles: stiffness varied per run, straight (180 deg) reference ----
+angle_style harmonic
+angle_coeff * ${k} 180.0
+
+# exclude bonded neighbors from pair interactions
+special_bonds lj 0.0 0.0 0.0
+
+# ---- ensemble: NVT ----
+velocity all create 1.0 12345 mom yes rot yes dist gaussian
+fix 1 all nvt temp 1.0 1.0 1.0
+
+timestep 0.01
+
+thermo       100000
+thermo_style custom step temp epair ebond eangle etotal press
+
+# ---- radius of gyration tracking ----
+compute rg all gyration
+fix     rgout all ave/time 100 1 100 c_rg file rg_k${k}.dat
+
+# ---- trajectory ----
+# DCD, to load in VMD alongside chain_simple.psf
+dump 1 all dcd 100000 dump_k${k}.dcd
+dump_modify 1 unwrap yes
+
+run 100000000
+
+write_data final_k${k}.data
