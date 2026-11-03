@@ -35,17 +35,20 @@ npc-polymer-transport/
 │   └── 02_simulation/            in.angle_k.lammps
 ├── no_hydrophobic/               pore brushes without hydrophobic beads
 │   ├── 01_system_generation/     npc.py
-│   ├── 02_simulation/            setup_runs.py, run_all.sh, lammps.config
+│   ├── 02_simulation/            setup_runs.py, run_all.sh, lammps.config,
+│   │                             0k5_05.data, 25k5_05.data, 50k5_05.data, 75k5_05.data, 100k5_05.data
 │   ├── 03_analysis/              dwell_hydro.py, counts_from_runs.py, fit_sigma50.py,
 │   │                             compute_density_profiles.py, order_mobility.py, compute_free_space.py
 │   └── 04_pmf/                   setup_umbrella.py, setup_hydro.py, wham_half.py
 ├── fA_0.2/                       pore brushes with hydrophobic fraction f_A = 0.2
 │   ├── 01_system_generation/     build_cyl_system_tunable.py, chain.tcl
-│   ├── 02_simulation/            setup_equil.py, setup_hydro.py
+│   ├── 02_simulation/            setup_equil.py, setup_hydro.py,
+│   │                             0_s20k505.data, 25_s20k505.data, 50_s20k505.data, 75_s20k505.data, 100_s20k505.data
 │   ├── 03_analysis/              dwell_hydro.py, counts_from_runs.py, fit_sigma50.py,
 │   │                             compute_density_profiles.py, compute_free_space.py
 │   └── 04_pmf/                   setup_umbrella.py, setup_hydro.py, wham_half.py, diffusion_z.py
 ├── fA_0.4/                       same as fA_0.2/, with f_A = 0.4
+│   └── 02_simulation/            data files: 0_405.data, 25_405.data, 50_405.data, 75_405.data, 100_405.data
 └── README.md
 ```
 
@@ -149,6 +152,32 @@ python3 blocklength/03_analysis/plot_rg.py <folder with rg_k*.dat>
 
 Each set-up script writes 100 independent trajectories for every cargo size (σ_c = 0.5 to 8σ). A trajectory ends when the cargo leaves through the opposite end of the pore, moves more than 60σ away, or reaches 2 × 10⁶ steps.
 
+#### Equilibrated brush configurations (`*.data`)
+
+Each `02_simulation/` folder contains the five equilibrated cargo-free brushes, one for each f_rigid. These are the starting configurations for the transport runs and the umbrella sampling.
+
+| Folder | Files | Atoms | Hydrophobic beads |
+|---|---|---|---|
+| `no_hydrophobic/02_simulation/` | `0k5_05.data` … `100k5_05.data` | 6227 | none |
+| `fA_0.2/02_simulation/` | `0_s20k505.data` … `100_s20k505.data` | 4909 | 704 of 3520 chain beads |
+| `fA_0.4/02_simulation/` | `0_405.data` … `100_405.data` | 4909 | 1408 of 3520 chain beads |
+
+All files: LAMMPS `atom_style full`, 88 chains, 3432 bonds, 3344 angles, written by VMD/TopoTools v1.7.
+
+> **Atom type numbers differ between files.**
+> TopoTools numbers atom types without gaps. In the f_rigid = 0 and f_rigid = 100 files one bead type is absent, so the type numbers after it shift down by one. The original type is written as a comment after each line of the `Masses` block.
+>
+> | LAMMPS type | f_rigid 25, 50, 75 | f_rigid 0 | f_rigid 100 |
+> |---|---|---|---|
+> | 1 | 1 | 1 | 1 |
+> | 2 | 2 | 3 | 2 |
+> | 3 | 3 | 4 | 4 |
+> | 4 | 4 | 5 | 5 |
+> | 5 | 5 | 6 in f_A files; absent in `no_hydrophobic` | 6 in f_A files; absent in `no_hydrophobic` |
+> | 6 (f_A files only) | 6 | absent | absent |
+>
+> Before running a 0 or 100 file, check that `pair_coeff`, `angle_coeff` and `group` commands use that file's type numbers. Using the input of a 25, 50 or 75 file unchanged gives wrong interactions, and LAMMPS does not report an error.
+
 ### 03_analysis: brush structure and transport
 
 | Step | File | Purpose |
@@ -180,7 +209,7 @@ For `fA_0.2/` and `fA_0.4/`, use the f_A value as the label, for example `python
 
 ```
 cd no_hydrophobic/04_pmf
-python3 setup_umbrella.py 0k5_05.data 50k5_05.data 100k5_05.data --sigmas 4 --reps 3 --zmin -50 --zmax 50 --no-start
+python3 setup_umbrella.py ../02_simulation/0k5_05.data ../02_simulation/50k5_05.data ../02_simulation/100k5_05.data --sigmas 4 --reps 3 --zmin -50 --zmax 50 --no-start
 # run the windows, then
 python3 wham_half.py 0k5/umbrella_s4.0 50k5/umbrella_s4.0 100k5/umbrella_s4.0
 ```
@@ -193,6 +222,7 @@ python3 wham_half.py 0k5/umbrella_s4.0 50k5/umbrella_s4.0 100k5/umbrella_s4.0
 - `k5`: bending constant k_θ = 5 for the rigid segments.
 - `bl<λ>`: charge blocklength of the single chain; `k<value>`: bending constant of the single chain.
 - `s20`, `4`: brushes with f_A = 0.2 and 0.4.
+- Data files: `<f_rigid>k5_05.data` (no hydrophobic beads), `<f_rigid>_s20k505.data` (f_A = 0.2), `<f_rigid>_405.data` (f_A = 0.4).
 
 ---
 
