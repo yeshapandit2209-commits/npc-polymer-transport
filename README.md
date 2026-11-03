@@ -2,7 +2,7 @@
 
 Coarse-grained molecular dynamics of cargo transport through a model nuclear pore complex.
 
-Contact: Mithun Radhakrishna (mithunr@iitgn.ac.in), Yesha Pandit (yesha.pandit@iitgn.ac.in)
+Yesha Pandit (yesha.pandit@iitgn.ac.in)
 Department of Chemical Engineering, Indian Institute of Technology Gandhinagar, India.
 
 ---
